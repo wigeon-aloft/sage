@@ -1,3 +1,3 @@
 # sage
 
-A file manager written in Go using GTK.
+A graphical GTK widget-based file manager written in Go.
