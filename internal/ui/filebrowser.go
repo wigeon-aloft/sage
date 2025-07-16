@@ -60,23 +60,35 @@ func setupFileTreeView() *gtk.TreeView {
 	treeView.AppendColumn(column2)
 	treeView.AppendColumn(column3)
 
-	listStore, err := gtk.ListStoreNew(glib.TYPE_STRING, glib.TYPE_STRING, glib.TYPE_STRING)
+	listStore, err := gtk.ListStoreNew(
+		glib.TYPE_STRING,
+		glib.TYPE_STRING,
+		glib.TYPE_STRING,
+	)
+
 	if err != nil {
 		log.Fatal("Could not create liststore: ", err)
 	}
 	treeView.SetModel(listStore)
 
-	populateTreeView(listStore, "/home/wigeon")
+	updateFileTreeView(listStore, "/")
 
 	return treeView
 }
 
-func populateTreeView(liststore *gtk.ListStore, path string) error {
+func updateFileTreeView(liststore *gtk.ListStore, path string) error {
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return err
+	}
+
 	dirEntry, err := os.ReadDir(path)
 
 	if err != nil {
 		return err
 	}
+
+	liststore.Clear()
 
 	for _, item := range dirEntry {
 		itemInfo, err := item.Info()

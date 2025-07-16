@@ -12,11 +12,6 @@ func BuildDefaultLayout(appWindow *gtk.ApplicationWindow) {
 		log.Fatal("Could not create VBox: ", err)
 	}
 
-	entry, err := gtk.EntryNew()
-	if err != nil {
-		log.Fatal("Could not create entry widget:", err)
-	}
-
 	treeView := setupFileTreeView()
 
 	scrollableWindow, err := gtk.ScrolledWindowNew(nil, nil)
@@ -24,6 +19,28 @@ func BuildDefaultLayout(appWindow *gtk.ApplicationWindow) {
 		log.Fatal("Could not create scrolled window: ", err)
 	}
 	scrollableWindow.SetPropagateNaturalHeight(true)
+
+	entry, err := gtk.EntryNew()
+	if err != nil {
+		log.Fatal("Could not create entry widget:", err)
+	}
+
+	entry.Connect("activate", func(entry *gtk.Entry) {
+		query, err := entry.GetText()
+		if err != nil {
+			log.Fatal("Unable to get text from Entry widget: ", err)
+		}
+
+		listStore, err := treeView.GetModel()
+		if err != nil {
+			log.Fatal("Unable to get model from treeview: ", err)
+		}
+
+		err = updateFileTreeView(listStore.(*gtk.ListStore), query)
+		if err != nil {
+			log.Print("Unable to update file treeview: ", err)
+		}
+	})
 
 	scrollableWindow.Add(treeView)
 
