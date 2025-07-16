@@ -3,6 +3,8 @@ package ui
 import (
 	"log"
 
+	"gitlab.wige.one/wigeon/sage/internal/ui/dialogs"
+
 	"github.com/gotk3/gotk3/gtk"
 )
 
@@ -39,6 +41,16 @@ func BuildDefaultLayout(appWindow *gtk.ApplicationWindow) {
 		err = updateFileTreeView(listStore.(*gtk.ListStore), query)
 		if err != nil {
 			log.Print("Unable to update file treeview: ", err)
+			errDialog, err := dialogs.ErrorDialogNew(
+				"Error",
+				appWindow,
+				err.Error(),
+			)
+			if err != nil {
+				log.Fatal("Unable to create error dialog: ", err)
+			}
+
+			errDialog.ShowAll()
 		}
 	})
 
