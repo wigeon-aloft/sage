@@ -1,0 +1,96 @@
+package ui
+
+import (
+	"fmt"
+	"log"
+	"os"
+	"time"
+
+	"github.com/gotk3/gotk3/glib"
+	"github.com/gotk3/gotk3/gtk"
+)
+
+const (
+	COLUMN_FILENAME int = iota
+	COLUMN_SIZE
+	COLUMN_MODIFIED
+)
+
+func createFileTreeViewColumn(name string, index int) (*gtk.TreeViewColumn, error) {
+	cellRenderer, err := gtk.CellRendererTextNew()
+	if err != nil {
+		return nil, err
+	}
+
+	column, err := gtk.TreeViewColumnNewWithAttribute(name, cellRenderer, "text", int(index))
+	if err != nil {
+		return nil, err
+	}
+
+	return column, nil
+}
+
+func addRow(liststore *gtk.ListStore, name, size, modified string) error {
+	iter := liststore.Append()
+
+	err := liststore.Set(iter, []int{COLUMN_FILENAME, COLUMN_SIZE, COLUMN_MODIFIED}, []any{name, size, modified})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func setupFileTreeView() *gtk.TreeView {
+	treeView, err := gtk.TreeViewNew()
+	if err != nil {
+		log.Fatal("Could not create treeview: ", err)
+	}
+
+	column1, err := createFileTreeViewColumn("Name", COLUMN_FILENAME)
+	column2, err := createFileTreeViewColumn("Size", COLUMN_SIZE)
+	column3, err := createFileTreeViewColumn("Modified", COLUMN_MODIFIED)
+
+	if err != nil {
+		log.Fatal("Error adding column: ", err)
+	}
+
+	treeView.AppendColumn(column1)
+	treeView.AppendColumn(column2)
+	treeView.AppendColumn(column3)
+
+	listStore, err := gtk.ListStoreNew(glib.TYPE_STRING, glib.TYPE_STRING, glib.TYPE_STRING)
+	if err != nil {
+		log.Fatal("Could not create liststore: ", err)
+	}
+	treeView.SetModel(listStore)
+
+	populateTreeView(listStore, "/home/wigeon")
+
+	return treeView
+}
+
+func populateTreeView(liststore *gtk.ListStore, path string) error {
+	dirEntry, err := os.ReadDir(path)
+
+	if err != nil {
+		return err
+	}
+
+	for _, item := range dirEntry {
+		itemInfo, err := item.Info()
+		if err != nil {
+			return err
+		}
+
+		addRow(
+			liststore,
+			item.Name(),
+			fmt.Sprint(itemInfo.Size()),
+			itemInfo.ModTime().Format(time.RFC822),
+		)
+	}
+
+	return nil
+}
