@@ -17,8 +17,18 @@ func BuildDefaultLayout(appWindow *gtk.ApplicationWindow) {
 		log.Fatal("Could not create entry widget:", err)
 	}
 
+	treeView := setupFileTreeView()
+
+	scrollableWindow, err := gtk.ScrolledWindowNew(nil, nil)
+	if err != nil {
+		log.Fatal("Could not create scrolled window: ", err)
+	}
+	scrollableWindow.SetPropagateNaturalHeight(true)
+
+	scrollableWindow.Add(treeView)
+
 	vbox.Add(entry)
-	vbox.Add(setupFileTreeView())
+	vbox.Add(scrollableWindow)
 
 	appWindow.Add(vbox)
 
