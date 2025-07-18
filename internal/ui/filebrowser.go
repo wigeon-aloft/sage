@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/gotk3/gotk3/glib"
@@ -14,6 +15,7 @@ const (
 	COLUMN_FILENAME int = iota
 	COLUMN_SIZE
 	COLUMN_MODIFIED
+	COLUMN_EXTENSION
 )
 
 func createFileTreeViewColumn(name string, index int) (*gtk.TreeViewColumn, error) {
@@ -30,10 +32,14 @@ func createFileTreeViewColumn(name string, index int) (*gtk.TreeViewColumn, erro
 	return column, nil
 }
 
-func addRow(liststore *gtk.ListStore, name, size, modified string) error {
+func addRow(liststore *gtk.ListStore, name, size, modified, extension string) error {
 	iter := liststore.Append()
 
-	err := liststore.Set(iter, []int{COLUMN_FILENAME, COLUMN_SIZE, COLUMN_MODIFIED}, []any{name, size, modified})
+	err := liststore.Set(
+		iter,
+		[]int{COLUMN_FILENAME, COLUMN_SIZE, COLUMN_MODIFIED, COLUMN_EXTENSION},
+		[]any{name, size, modified, extension},
+	)
 
 	if err != nil {
 		return err
@@ -51,6 +57,7 @@ func setupFileTreeView() *gtk.TreeView {
 	column1, err := createFileTreeViewColumn("Name", COLUMN_FILENAME)
 	column2, err := createFileTreeViewColumn("Size", COLUMN_SIZE)
 	column3, err := createFileTreeViewColumn("Modified", COLUMN_MODIFIED)
+	column4, err := createFileTreeViewColumn("Type", COLUMN_EXTENSION)
 
 	if err != nil {
 		log.Fatal("Error adding column: ", err)
@@ -59,8 +66,10 @@ func setupFileTreeView() *gtk.TreeView {
 	treeView.AppendColumn(column1)
 	treeView.AppendColumn(column2)
 	treeView.AppendColumn(column3)
+	treeView.AppendColumn(column4)
 
 	listStore, err := gtk.ListStoreNew(
+		glib.TYPE_STRING,
 		glib.TYPE_STRING,
 		glib.TYPE_STRING,
 		glib.TYPE_STRING,
@@ -101,6 +110,7 @@ func updateFileTreeView(liststore *gtk.ListStore, path string) error {
 			item.Name(),
 			fmt.Sprint(itemInfo.Size()),
 			itemInfo.ModTime().Format(time.RFC822),
+			filepath.Ext(item.Name()),
 		)
 	}
 
