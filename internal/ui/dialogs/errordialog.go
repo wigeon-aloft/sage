@@ -1,6 +1,8 @@
 package dialogs
 
 import (
+	"os"
+
 	"github.com/gotk3/gotk3/gtk"
 )
 
@@ -60,7 +62,7 @@ func FatalErrorDialogNew(title string, parent gtk.IWindow, errorMessage string) 
 	dialog.SetModal(true)
 
 	dialog.Connect("response", func(dialog *gtk.Dialog) {
-		parent.ToWindow().Destroy()
+		os.Exit(1)
 	})
 
 	return dialog, nil
