@@ -29,6 +29,11 @@ func createFileTreeViewColumn(name string, index int) (*gtk.TreeViewColumn, erro
 		return nil, err
 	}
 
+	column.SetClickable(true)
+	column.SetReorderable(true)
+	column.SetResizable(true)
+	column.SetMinWidth(16)
+
 	return column, nil
 }
 
