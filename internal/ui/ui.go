@@ -2,6 +2,7 @@ package ui
 
 import (
 	"log"
+	"path/filepath"
 
 	"gitlab.wige.one/wigeon/sage/internal/ui/dialogs"
 
@@ -56,7 +57,37 @@ func BuildDefaultLayout(appWindow *gtk.ApplicationWindow) {
 
 	scrollableWindow.Add(treeView)
 
+	button, err := gtk.ButtonNew()
+	if err != nil {
+		log.Fatal()
+	}
+	button.SetLabel("UP")
+
+	button.Connect("clicked", func(button *gtk.Button) {
+
+		treeViewModel, err := treeView.GetModel()
+		if err != nil {
+			log.Fatal("Could not get treeView model: ", err)
+		}
+
+		path, err := entry.GetText()
+		if err != nil {
+			log.Fatal("Could not get text from path entry: ", err)
+		}
+		parentDirectory := filepath.Dir(path)
+
+		log.Print("Navigating up a directory level: ", parentDirectory)
+		err = updateFileTreeView(treeViewModel.(*gtk.ListStore), parentDirectory)
+
+		if err != nil {
+			log.Fatal("Unable to update file treeview: ", err)
+		}
+
+		entry.SetText(parentDirectory)
+	})
+
 	vbox.Add(entry)
+	vbox.Add(button)
 	vbox.Add(scrollableWindow)
 
 	appWindow.Add(vbox)
