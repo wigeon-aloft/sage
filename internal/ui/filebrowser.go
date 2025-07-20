@@ -21,7 +21,7 @@ const (
 )
 
 var (
-	fileBrowser = logic.FileBrowser{}
+	fileBrowser = logic.FileBrowserNew()
 )
 
 func createFileTreeViewColumn(name string, index int) (*gtk.TreeViewColumn, error) {
@@ -43,7 +43,7 @@ func createFileTreeViewColumn(name string, index int) (*gtk.TreeViewColumn, erro
 	return column, nil
 }
 
-// TODO: use map[int]string for file info (name, size, etc.)
+// TODO: use map[int(column index)]string for file info (name, size, etc.)
 func addRow(liststore *gtk.ListStore, name, size, modified, extension string) error {
 	iter := liststore.Append()
 

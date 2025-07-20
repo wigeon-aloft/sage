@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"log"
 
 	"gitlab.wige.one/wigeon/sage/internal/ui/dialogs"
@@ -56,6 +57,7 @@ func BuildDefaultLayout(appWindow *gtk.ApplicationWindow) {
 			errDialog.ShowAll()
 		}
 	})
+	entry.SetText(fileBrowser.CurrentDirectory())
 
 	scrollableWindow.Add(treeView)
 
@@ -63,7 +65,7 @@ func BuildDefaultLayout(appWindow *gtk.ApplicationWindow) {
 	if err != nil {
 		log.Fatal()
 	}
-	upButton.SetLabel("UP")
+	upButton.SetLabel("↑")
 
 	upButton.Connect("clicked", func(button *gtk.Button) {
 
@@ -83,8 +85,65 @@ func BuildDefaultLayout(appWindow *gtk.ApplicationWindow) {
 		entry.SetText(fileBrowser.CurrentDirectory())
 	})
 
+	backButton, err := gtk.ButtonNew()
+	if err != nil {
+		log.Fatal()
+	}
+	backButton.SetLabel("←")
+
+	backButton.Connect("clicked", func(button *gtk.Button) {
+		log.Printf("back button clicked")
+
+		treeViewModel, err := treeView.GetModel()
+
+		if err != nil {
+			errorDialog, err := dialogs.ErrorDialogNew(
+				"Internal Error",
+				appWindow,
+				fmt.Sprint("Call to treeview.GetModel() failed: ", err),
+			)
+
+			if err != nil {
+				log.Fatal("Unable to create errorDialog")
+			}
+
+			errorDialog.ShowAll()
+
+			return
+		}
+
+		previousDirectory := fileBrowser.NavigateBack()
+		err = updateFileTreeView(treeViewModel.(*gtk.ListStore), previousDirectory)
+
+		if err != nil {
+
+			errorDialog, err := dialogs.ErrorDialogNew(
+				"History navigation error",
+				appWindow,
+				fmt.Sprintf("Unable to navigate back in history stack. Error content: %s", err),
+			)
+
+			if err != nil {
+				log.Fatal("Unable to create errorDialog.")
+			}
+
+			errorDialog.ShowAll()
+
+			return
+
+		}
+
+		entry.SetText(previousDirectory)
+
+	})
+
+	buttonBox, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 8)
+
+	buttonBox.Add(backButton)
+	buttonBox.Add(upButton)
+
 	vbox.Add(entry)
-	vbox.Add(upButton)
+	vbox.Add(buttonBox)
 	vbox.Add(scrollableWindow)
 
 	appWindow.Add(vbox)
