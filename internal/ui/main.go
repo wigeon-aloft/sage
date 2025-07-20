@@ -2,7 +2,6 @@ package ui
 
 import (
 	"log"
-	"path/filepath"
 
 	"gitlab.wige.one/wigeon/sage/internal/ui/dialogs"
 
@@ -15,7 +14,10 @@ func BuildDefaultLayout(appWindow *gtk.ApplicationWindow) {
 		log.Fatal("Could not create VBox: ", err)
 	}
 
-	treeView := setupFileTreeView()
+	treeView, err := setupFileTreeView()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	scrollableWindow, err := gtk.ScrolledWindowNew(nil, nil)
 	if err != nil {
@@ -57,42 +59,37 @@ func BuildDefaultLayout(appWindow *gtk.ApplicationWindow) {
 
 	scrollableWindow.Add(treeView)
 
-	button, err := gtk.ButtonNew()
+	upButton, err := gtk.ButtonNew()
 	if err != nil {
 		log.Fatal()
 	}
-	button.SetLabel("UP")
+	upButton.SetLabel("UP")
 
-	button.Connect("clicked", func(button *gtk.Button) {
+	upButton.Connect("clicked", func(button *gtk.Button) {
 
 		treeViewModel, err := treeView.GetModel()
 		if err != nil {
 			log.Fatal("Could not get treeView model: ", err)
 		}
 
-		path, err := entry.GetText()
-		if err != nil {
-			log.Fatal("Could not get text from path entry: ", err)
-		}
-		parentDirectory := filepath.Dir(path)
+		fileBrowser.NavigateUp()
 
-		log.Print("Navigating up a directory level: ", parentDirectory)
-		err = updateFileTreeView(treeViewModel.(*gtk.ListStore), parentDirectory)
+		err = updateFileTreeView(treeViewModel.(*gtk.ListStore), fileBrowser.CurrentDirectory())
 
 		if err != nil {
 			log.Fatal("Unable to update file treeview: ", err)
 		}
 
-		entry.SetText(parentDirectory)
+		entry.SetText(fileBrowser.CurrentDirectory())
 	})
 
 	vbox.Add(entry)
-	vbox.Add(button)
+	vbox.Add(upButton)
 	vbox.Add(scrollableWindow)
 
 	appWindow.Add(vbox)
 
 	appWindow.ShowAll()
 
-	// TODO - implement gtk Builder to build layout from file
+	// TODO: implement gtk Builder to build layout from file
 }

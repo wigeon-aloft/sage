@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"gitlab.wige.one/wigeon/sage/internal/logic"
+
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 )
@@ -16,6 +18,10 @@ const (
 	COLUMN_SIZE
 	COLUMN_MODIFIED
 	COLUMN_EXTENSION
+)
+
+var (
+	fileBrowser = logic.FileBrowser{}
 )
 
 func createFileTreeViewColumn(name string, index int) (*gtk.TreeViewColumn, error) {
@@ -37,6 +43,7 @@ func createFileTreeViewColumn(name string, index int) (*gtk.TreeViewColumn, erro
 	return column, nil
 }
 
+// TODO: use map[int]string for file info (name, size, etc.)
 func addRow(liststore *gtk.ListStore, name, size, modified, extension string) error {
 	iter := liststore.Append()
 
@@ -53,10 +60,10 @@ func addRow(liststore *gtk.ListStore, name, size, modified, extension string) er
 	return nil
 }
 
-func setupFileTreeView() *gtk.TreeView {
+func setupFileTreeView() (*gtk.TreeView, error) {
 	treeView, err := gtk.TreeViewNew()
 	if err != nil {
-		log.Fatal("Could not create treeview: ", err)
+		return nil, err
 	}
 
 	column1, err := createFileTreeViewColumn("Name", COLUMN_FILENAME)
@@ -65,7 +72,7 @@ func setupFileTreeView() *gtk.TreeView {
 	column4, err := createFileTreeViewColumn("Type", COLUMN_EXTENSION)
 
 	if err != nil {
-		log.Fatal("Error adding column: ", err)
+		return nil, err
 	}
 
 	treeView.AppendColumn(column1)
@@ -85,18 +92,24 @@ func setupFileTreeView() *gtk.TreeView {
 	}
 	treeView.SetModel(listStore)
 
-	updateFileTreeView(listStore, "/")
+	err = fileBrowser.ChangeDirectory("/")
+	if err != nil {
+		return nil, err
+	}
+	updateFileTreeView(listStore, fileBrowser.CurrentDirectory())
 
-	return treeView
+	return treeView, nil
 }
 
 func updateFileTreeView(liststore *gtk.ListStore, path string) error {
 
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	err := fileBrowser.ChangeDirectory(path)
+
+	if err != nil {
 		return err
 	}
 
-	dirEntry, err := os.ReadDir(path)
+	dirEntry, err := os.ReadDir(fileBrowser.CurrentDirectory())
 
 	if err != nil {
 		return err
