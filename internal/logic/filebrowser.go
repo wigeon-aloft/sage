@@ -65,8 +65,27 @@ func (fb *FileBrowser) NavigateUp() string {
 	return fb.currentDirectory
 }
 
-// TODO: implement a history stack to store previous locations
 func (fb *FileBrowser) NavigateBack() string {
 	fb.currentDirectory = fb.historyStack.Pop()
 	return fb.currentDirectory
+}
+
+func (fb *FileBrowser) GetCurrentDirContents() ([]os.FileInfo, error) {
+	dirEntries, err := os.ReadDir(fb.currentDirectory)
+	if err != nil {
+		return nil, err
+	}
+
+	dirContents := make([]os.FileInfo, len(dirEntries))
+	for idx, dirEntry := range dirEntries {
+		info, err := dirEntry.Info()
+
+		if err != nil {
+			return nil, err
+		}
+
+		dirContents[idx] = info
+	}
+
+	return dirContents, nil
 }

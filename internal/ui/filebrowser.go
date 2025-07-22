@@ -3,7 +3,6 @@ package ui
 import (
 	"fmt"
 	"log"
-	"os"
 	"path/filepath"
 	"time"
 
@@ -109,7 +108,7 @@ func updateFileTreeView(liststore *gtk.ListStore, path string) error {
 		return err
 	}
 
-	dirEntry, err := os.ReadDir(fileBrowser.CurrentDirectory())
+	contents, err := fileBrowser.GetCurrentDirContents()
 
 	if err != nil {
 		return err
@@ -117,18 +116,22 @@ func updateFileTreeView(liststore *gtk.ListStore, path string) error {
 
 	liststore.Clear()
 
-	for _, item := range dirEntry {
-		itemInfo, err := item.Info()
-		if err != nil {
-			return err
+	var ext string
+
+	for _, item := range contents {
+
+		ext = filepath.Ext(item.Name())
+		fmt.Printf("ext = %q\n", ext)
+		if ext == "" {
+			ext = "dir"
 		}
 
 		addRow(
 			liststore,
 			item.Name(),
-			fmt.Sprint(itemInfo.Size()),
-			itemInfo.ModTime().Format(time.RFC822),
-			filepath.Ext(item.Name()),
+			fmt.Sprint(item.Size()),
+			item.ModTime().Format(time.RFC822),
+			ext,
 		)
 	}
 
