@@ -97,6 +97,40 @@ func setupFileTreeView() (*gtk.TreeView, error) {
 	}
 	updateFileTreeView(listStore, fileBrowser.CurrentDirectory())
 
+	treeView.Connect("row-activated", func(tv *gtk.TreeView, tp *gtk.TreePath, tvc *gtk.TreeViewColumn) {
+		model, err := tv.GetModel()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		listStore := model.(*gtk.ListStore)
+
+		iter, err := listStore.GetIter(tp)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		columnValue, err := listStore.GetValue(iter, 0)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		path, err := columnValue.GetString()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = fileBrowser.ChangeDirectory(
+			filepath.Join(fileBrowser.CurrentDirectory(), path),
+		)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		updateFileTreeView(listStore, fileBrowser.CurrentDirectory())
+	})
+
 	return treeView, nil
 }
 
@@ -121,7 +155,6 @@ func updateFileTreeView(liststore *gtk.ListStore, path string) error {
 	for _, item := range contents {
 
 		ext = filepath.Ext(item.Name())
-		fmt.Printf("ext = %q\n", ext)
 		if ext == "" {
 			ext = "dir"
 		}
