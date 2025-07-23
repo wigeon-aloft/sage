@@ -8,6 +8,8 @@
 
 image: golang:latest
 
+
+
 stages:
   - test
   - build
@@ -15,6 +17,8 @@ stages:
 
 format:
   stage: test
+  before_script:
+    - apt install gcc libgtk-3-dev libcairo2-dev libglib2.0-dev -y
   script:
     - go fmt $(go list ./... | grep -v /vendor/)
     - go vet $(go list ./... | grep -v /vendor/)
@@ -22,6 +26,8 @@ format:
 
 compile:
   stage: build
+  before_script:
+    - apt install gcc libgtk-3-dev libcairo2-dev libglib2.0-dev -y
   script:
     - mkdir -p bin
     - go build -o bin ./...
