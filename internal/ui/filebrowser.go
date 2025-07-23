@@ -110,7 +110,7 @@ func setupFileTreeView() (*gtk.TreeView, error) {
 			log.Fatal(err)
 		}
 
-		columnValue, err := listStore.GetValue(iter, 0)
+		columnValue, err := listStore.GetValue(iter, COLUMN_FILENAME)
 		if err != nil {
 			log.Fatal(err)
 		}
