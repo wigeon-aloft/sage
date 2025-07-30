@@ -26,10 +26,10 @@ type Column struct {
 }
 
 var DEFAULT_COLUMNS = []Column{
-	Column{Index: COLUMN_FILENAME, Name: "Name", Type: glib.TYPE_STRING},
-	Column{Index: COLUMN_SIZE, Name: "Size", Type: glib.TYPE_STRING},
-	Column{Index: COLUMN_MODIFIED, Name: "Modified", Type: glib.TYPE_STRING},
-	Column{Index: COLUMN_EXTENSION, Name: "Type", Type: glib.TYPE_STRING},
+	{Index: COLUMN_FILENAME, Name: "Name", Type: glib.TYPE_STRING},
+	{Index: COLUMN_SIZE, Name: "Size", Type: glib.TYPE_STRING},
+	{Index: COLUMN_MODIFIED, Name: "Modified", Type: glib.TYPE_STRING},
+	{Index: COLUMN_EXTENSION, Name: "Type", Type: glib.TYPE_STRING},
 }
 
 type FileBrowserUI struct {
