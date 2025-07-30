@@ -38,6 +38,7 @@ type FileBrowserUI struct {
 	fileListStore *gtk.ListStore
 	fileTreeView  *gtk.TreeView
 	Layout        *gtk.Box
+	pathEntry     *gtk.Entry
 }
 
 func FileBrowserUINew() (*FileBrowserUI, error) {
@@ -49,33 +50,7 @@ func FileBrowserUINew() (*FileBrowserUI, error) {
 	if err != nil {
 		return nil, err
 	}
-	treeView.Connect("row-activated", func(tv *gtk.TreeView, tp *gtk.TreePath, tvc *gtk.TreeViewColumn) {
-
-		iter, err := listStore.GetIter(tp)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		columnValue, err := listStore.GetValue(iter, 0)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		path, err := columnValue.GetString()
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		err = fbui.fileBrowser.ChangeDirectory(
-			filepath.Join(fbui.fileBrowser.CurrentDirectory(), path),
-		)
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		fbui.updateFileTreeView()
-	})
+	treeView.Connect("row-activated", fbui.treeViewRowActivatedConnection)
 	treeView.SetModel(listStore)
 	fbui.fileTreeView = treeView
 	fbui.fileListStore = listStore
@@ -95,24 +70,9 @@ func FileBrowserUINew() (*FileBrowserUI, error) {
 	if err != nil {
 		log.Fatal("Could not create entry widget:", err)
 	}
-
-	entry.Connect("activate", func(entry *gtk.Entry) {
-		query, err := entry.GetText()
-		if err != nil {
-			log.Fatal("Unable to get text from Entry widget: ", err)
-		}
-
-		err = fbui.fileBrowser.ChangeDirectory(query)
-		if err != nil {
-			log.Fatal("Unable to change directory: ", err)
-		}
-
-		err = fbui.updateFileTreeView()
-		if err != nil {
-			log.Fatal("Unable to update file treeview: ", err)
-		}
-	})
+	entry.Connect("activate", fbui.pathEntryActivatedConnection)
 	entry.SetText(fbui.fileBrowser.CurrentDirectory())
+	fbui.pathEntry = entry
 
 	scrollableWindow.Add(treeView)
 
@@ -121,39 +81,14 @@ func FileBrowserUINew() (*FileBrowserUI, error) {
 		log.Fatal()
 	}
 	upButton.SetLabel("↑")
-
-	upButton.Connect("clicked", func(button *gtk.Button) {
-
-		newPath := fbui.fileBrowser.NavigateUp()
-
-		err = fbui.updateFileTreeView()
-
-		if err != nil {
-			log.Fatal("Unable to update file treeview: ", err)
-		}
-
-		entry.SetText(newPath)
-	})
+	upButton.Connect("clicked", fbui.upButtonClickedConnection)
 
 	backButton, err := gtk.ButtonNew()
 	if err != nil {
 		log.Fatal()
 	}
 	backButton.SetLabel("←")
-
-	backButton.Connect("clicked", func(button *gtk.Button) {
-		log.Printf("back button clicked")
-
-		previousDirectory := fbui.fileBrowser.NavigateBack()
-		err = fbui.updateFileTreeView()
-
-		if err != nil {
-			log.Fatal("Unable to update file treeview: ", err)
-		}
-
-		entry.SetText(previousDirectory)
-
-	})
+	backButton.Connect("clicked", fbui.backButtonClickedConnection)
 
 	buttonBox, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 8)
 
@@ -291,5 +226,50 @@ func (fbui *FileBrowserUI) treeViewRowActivatedConnection(tv *gtk.TreeView, tp *
 		return err
 	}
 
+	fbui.pathEntry.SetText(fbui.fileBrowser.CurrentDirectory())
+
 	return nil
+}
+
+func (fbui *FileBrowserUI) backButtonClickedConnection(_ *gtk.Button) {
+
+	previousDirectory := fbui.fileBrowser.NavigateBack()
+	fbui.pathEntry.SetText(previousDirectory)
+
+	err := fbui.updateFileTreeView()
+
+	if err != nil {
+		log.Fatal("Unable to update file treeview: ", err)
+	}
+
+}
+
+func (fbui *FileBrowserUI) upButtonClickedConnection(_ *gtk.Button) {
+
+	newPath := fbui.fileBrowser.NavigateUp()
+	fbui.pathEntry.SetText(newPath)
+
+	err := fbui.updateFileTreeView()
+
+	if err != nil {
+		log.Fatal("Unable to update file treeview: ", err)
+	}
+
+}
+
+func (fbui *FileBrowserUI) pathEntryActivatedConnection(entry *gtk.Entry) {
+	query, err := entry.GetText()
+	if err != nil {
+		log.Fatal("Unable to get text from Entry widget: ", err)
+	}
+
+	err = fbui.fileBrowser.ChangeDirectory(query)
+	if err != nil {
+		log.Fatal("Unable to change directory: ", err)
+	}
+
+	err = fbui.updateFileTreeView()
+	if err != nil {
+		log.Fatal("Unable to update file treeview: ", err)
+	}
 }
