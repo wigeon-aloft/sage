@@ -1,152 +1,19 @@
 package ui
 
 import (
-	"fmt"
 	"log"
-
-	"gitlab.wige.one/wigeon/sage/internal/ui/dialogs"
 
 	"github.com/gotk3/gotk3/gtk"
 )
 
 func BuildDefaultLayout(appWindow *gtk.ApplicationWindow) {
-	vbox, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 8)
+
+	fbui, err := FileBrowserUINew()
 	if err != nil {
-		log.Fatal("Could not create VBox: ", err)
+		log.Fatal("Could not create FileBrowserUINew: ", err)
 	}
 
-	treeView, err := setupFileTreeView()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	scrollableWindow, err := gtk.ScrolledWindowNew(nil, nil)
-	if err != nil {
-		log.Fatal("Could not create scrolled window: ", err)
-	}
-	scrollableWindow.SetPropagateNaturalHeight(true)
-
-	entry, err := gtk.EntryNew()
-	if err != nil {
-		log.Fatal("Could not create entry widget:", err)
-	}
-
-	entry.Connect("activate", func(entry *gtk.Entry) {
-		query, err := entry.GetText()
-		if err != nil {
-			log.Fatal("Unable to get text from Entry widget: ", err)
-		}
-
-		listStore, err := treeView.GetModel()
-		if err != nil {
-			log.Fatal("Unable to get model from treeview: ", err)
-		}
-
-		err = updateFileTreeView(listStore.(*gtk.ListStore), query)
-		if err != nil {
-			log.Print("Unable to update file treeview: ", err)
-			errDialog, err := dialogs.ErrorDialogNew(
-				"Error",
-				appWindow,
-				err.Error(),
-			)
-			if err != nil {
-				log.Fatal("Unable to create error dialog: ", err)
-			}
-
-			errDialog.ShowAll()
-		}
-	})
-	entry.SetText(fileBrowser.CurrentDirectory())
-
-	scrollableWindow.Add(treeView)
-
-	upButton, err := gtk.ButtonNew()
-	if err != nil {
-		log.Fatal()
-	}
-	upButton.SetLabel("↑")
-
-	upButton.Connect("clicked", func(button *gtk.Button) {
-
-		treeViewModel, err := treeView.GetModel()
-		if err != nil {
-			log.Fatal("Could not get treeView model: ", err)
-		}
-
-		fileBrowser.NavigateUp()
-
-		err = updateFileTreeView(treeViewModel.(*gtk.ListStore), fileBrowser.CurrentDirectory())
-
-		if err != nil {
-			log.Fatal("Unable to update file treeview: ", err)
-		}
-
-		entry.SetText(fileBrowser.CurrentDirectory())
-	})
-
-	backButton, err := gtk.ButtonNew()
-	if err != nil {
-		log.Fatal()
-	}
-	backButton.SetLabel("←")
-
-	backButton.Connect("clicked", func(button *gtk.Button) {
-		log.Printf("back button clicked")
-
-		treeViewModel, err := treeView.GetModel()
-
-		if err != nil {
-			errorDialog, err := dialogs.ErrorDialogNew(
-				"Internal Error",
-				appWindow,
-				fmt.Sprint("Call to treeview.GetModel() failed: ", err),
-			)
-
-			if err != nil {
-				log.Fatal("Unable to create errorDialog")
-			}
-
-			errorDialog.ShowAll()
-
-			return
-		}
-
-		previousDirectory := fileBrowser.NavigateBack()
-		err = updateFileTreeView(treeViewModel.(*gtk.ListStore), previousDirectory)
-
-		if err != nil {
-
-			errorDialog, err := dialogs.ErrorDialogNew(
-				"History navigation error",
-				appWindow,
-				fmt.Sprintf("Unable to navigate back in history stack. Error content: %s", err),
-			)
-
-			if err != nil {
-				log.Fatal("Unable to create errorDialog.")
-			}
-
-			errorDialog.ShowAll()
-
-			return
-
-		}
-
-		entry.SetText(previousDirectory)
-
-	})
-
-	buttonBox, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 8)
-
-	buttonBox.Add(backButton)
-	buttonBox.Add(upButton)
-
-	vbox.Add(entry)
-	vbox.Add(buttonBox)
-	vbox.Add(scrollableWindow)
-
-	appWindow.Add(vbox)
+	appWindow.Add(fbui.Layout)
 
 	appWindow.ShowAll()
 
