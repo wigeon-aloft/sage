@@ -31,7 +31,7 @@ func main() {
 			log.Fatal("Could not create application window: ", err)
 		}
 
-		ui.BuildDefaultLayout(appWindow)
+		ui.SageApplicationStart(appWindow)
 
 		appWindow.SetTitle(fmt.Sprintf("%s - %s", APP_NAME, APP_VERSION))
 		appWindow.SetDefaultSize(400, 400)
