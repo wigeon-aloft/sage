@@ -8,7 +8,7 @@ import (
 
 func SageApplicationStart(appWindow *gtk.ApplicationWindow) {
 
-	fbui, err := FileBrowserUINew()
+	fbui, err := FileBrowserUINew(appWindow)
 	if err != nil {
 		log.Fatal("Could not create FileBrowserUINew: ", err)
 	}

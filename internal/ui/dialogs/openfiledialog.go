@@ -4,13 +4,22 @@ import (
 	"github.com/gotk3/gotk3/gtk"
 )
 
+type callbackFn func(ofdr *OpenFileDialogResponse)
+
+type OpenFileDialogResponse struct {
+	ExecutablePath string
+	SaveSelection  bool
+}
+
 type OpenFileDialog struct {
 	*gtk.Dialog
 	binaryPathEntry          *gtk.Entry
 	saveSelectionCheckButton *gtk.CheckButton
+
+	callback callbackFn
 }
 
-func OpenFileDialogNew(parent gtk.IWindow) (*OpenFileDialog, error) {
+func OpenFileDialogNew(parent gtk.IWindow, callback callbackFn) (*OpenFileDialog, error) {
 
 	var fileDialog OpenFileDialog
 	var dialog *gtk.Dialog
@@ -68,6 +77,7 @@ func OpenFileDialogNew(parent gtk.IWindow) (*OpenFileDialog, error) {
 	fileDialog.Dialog = dialog
 	fileDialog.binaryPathEntry = binaryPathEntry
 	fileDialog.saveSelectionCheckButton = saveSelectionCheckButton
+	fileDialog.callback = callback
 
 	fileDialog.Connect("response", fileDialog.dialogResponse)
 
@@ -76,7 +86,18 @@ func OpenFileDialogNew(parent gtk.IWindow) (*OpenFileDialog, error) {
 
 func (ofd *OpenFileDialog) dialogResponse(dialog *gtk.Dialog) {
 
-	// TODO: write dialog response
+	var ofdr OpenFileDialogResponse
+
+	executablePath, err := ofd.binaryPathEntry.GetText()
+	if err != nil {
+		return
+	}
+
+	ofdr.ExecutablePath = executablePath
+	ofdr.SaveSelection = ofd.saveSelectionCheckButton.GetActive()
+
+	ofd.callback(&ofdr)
+
 	ofd.Destroy()
 
 }
