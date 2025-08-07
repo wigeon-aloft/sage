@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"gitlab.wige.one/wigeon/sage/internal/models"
 )
@@ -88,4 +90,20 @@ func (fb *FileBrowser) GetCurrentDirContents() ([]os.FileInfo, error) {
 	}
 
 	return dirContents, nil
+}
+
+func SaveApplicationMapping(executablePath string, extension string) {
+	// TODO: Save application-filetype mapping to users home directory
+}
+
+func (fb *FileBrowser) OpenFileExternally(executablePath string, filePath string, save bool) error {
+
+	executablePathSplit := strings.Split(executablePath, " ")
+	executable := executablePathSplit[0]
+	args := append(executablePathSplit[1:], filePath)
+
+	command := exec.Command(executable, args...)
+	command.Start()
+
+	return nil
 }
