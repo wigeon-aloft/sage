@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -34,6 +35,7 @@ var DEFAULT_COLUMNS = []Column{
 	{Index: COLUMN_EXTENSION, Name: "Type", Type: glib.TYPE_STRING},
 }
 
+// TODO: implement error dialogs
 type FileBrowserUI struct {
 	fileBrowser *logic.FileBrowser
 
@@ -46,10 +48,10 @@ type FileBrowserUI struct {
 	mostRecentSelection string
 }
 
-func FileBrowserUINew(parent gtk.IWindow) (*FileBrowserUI, error) {
+func FileBrowserUINew(parent gtk.IWindow, settings *logic.Settings) (*FileBrowserUI, error) {
 	var fbui FileBrowserUI
 
-	fbui.fileBrowser = logic.FileBrowserNew()
+	fbui.fileBrowser = logic.FileBrowserNewWithSettings(settings)
 	fbui.parent = parent
 
 	treeView, listStore, err := setupFileTreeView()
@@ -230,6 +232,19 @@ func (fbui *FileBrowserUI) treeViewRowActivatedConnection(tv *gtk.TreeView, tp *
 	}
 
 	if fileInfo.Mode().IsRegular() {
+
+		err := fbui.fileBrowser.OpenFileExternallyWithMapping(fullPath)
+
+		// File was opened successfully with existing mapping.
+		// Return without opening a dialog.
+		if err == nil {
+			return nil
+		}
+
+		if !errors.Is(err, logic.NoMappingError) {
+			return err
+		}
+
 		openFileDialog, err := dialogs.OpenFileDialogNew(fbui.parent, fbui.openFileDialogCallback)
 		if err != nil {
 			return err
@@ -302,5 +317,10 @@ func (fbui *FileBrowserUI) pathEntryActivatedConnection(entry *gtk.Entry) {
 }
 
 func (fbui *FileBrowserUI) openFileDialogCallback(ofdr *dialogs.OpenFileDialogResponse) {
-	fbui.fileBrowser.OpenFileExternally(ofdr.ExecutablePath, fbui.mostRecentSelection, ofdr.SaveSelection)
+
+	err := fbui.fileBrowser.OpenFileExternally(ofdr.ExecutablePath, fbui.mostRecentSelection, ofdr.SaveSelection)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 }
