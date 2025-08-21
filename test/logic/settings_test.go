@@ -80,6 +80,26 @@ func TestSettingsRemoveApplicationFiletypeMapping(t *testing.T) {
 
 }
 
+func TestSettingsLookupApplicationFiletypeMapping(t *testing.T) {
+
+	s, err := logic.SettingsNew()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	s.AddApplicationFiletypeMapping("sh", "/usr/bin/bash")
+
+	if s.LookupApplication("sh") != "/usr/bin/bash" {
+		t.Fatalf(
+			"s.LookupApplication(%q) == %q, expected %q",
+			"sh",
+			s.LookupApplication("sh"),
+			"/usr/bin/bash",
+		)
+	}
+
+}
+
 func TestSettingsWriteApplicationFiletypeMapping(t *testing.T) {
 
 	s, err := logic.SettingsNew()

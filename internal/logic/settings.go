@@ -66,11 +66,17 @@ func SettingsDefaultNew() (*Settings, error) {
 }
 
 func (s *Settings) AddApplicationFiletypeMapping(fileType string, applicationPath string) {
+	// FIX: check if the specified application path exists and is executable
+	// FIX: sanitise file extension e.g. remove preceding '.', check for strange characters like '/', etc.)
 	s.applicationFiletypeMapping[fileType] = applicationPath
 }
 
 func (s *Settings) RemoveApplicationFiletypeMapping(fileType string) {
 	delete(s.applicationFiletypeMapping, fileType)
+}
+
+func (s *Settings) LookupApplication(fileType string) string {
+	return s.applicationFiletypeMapping[fileType]
 }
 
 func (s *Settings) GetApplicationFiletypeMapping() ApplicationFiletypeMapping {
