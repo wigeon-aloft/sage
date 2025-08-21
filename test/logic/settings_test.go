@@ -1,7 +1,9 @@
 package logic_test
 
 import (
+	"fmt"
 	"io"
+	"log"
 	"os"
 	"path"
 	"reflect"
@@ -10,19 +12,33 @@ import (
 	"gitlab.wige.one/wigeon/sage/internal/logic"
 )
 
+func TestMain(m *testing.M) {
+	s, err := logic.SettingsNew()
+	if err != nil {
+		log.Fatal("Could not create initial settings struct: ", err)
+	}
+
+	os.RemoveAll(s.UserSettingsPath)
+
+	exitCode := m.Run()
+	os.Exit(exitCode)
+}
+
 func TestSettingsAddApplicationFiletypeMapping(t *testing.T) {
 
 	targetMap := logic.ApplicationFiletypeMapping{
-		"/usr/bin/bash": "sh",
-		"atril":         "pdf",
+		"sh":  "/usr/bin/bash",
+		"pdf": "atril",
 	}
 	s, err := logic.SettingsNew()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	s.AddApplicationFiletypeMapping("/usr/bin/bash", "sh")
-	s.AddApplicationFiletypeMapping("atril", "pdf")
+	s.AddApplicationFiletypeMapping("sh", "/usr/bin/bash")
+	s.AddApplicationFiletypeMapping("pdf", "atril")
+
+	fmt.Printf("%+v\n", s.GetApplicationFiletypeMapping())
 
 	if !reflect.DeepEqual(s.GetApplicationFiletypeMapping(), targetMap) {
 		t.Fatalf(
@@ -38,17 +54,19 @@ func TestSettingsAddApplicationFiletypeMapping(t *testing.T) {
 func TestSettingsRemoveApplicationFiletypeMapping(t *testing.T) {
 
 	targetMap := logic.ApplicationFiletypeMapping{
-		"atril": "pdf",
+		"pdf": "atril",
 	}
 	s, err := logic.SettingsNew()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	s.AddApplicationFiletypeMapping("/usr/bin/bash", "sh")
-	s.AddApplicationFiletypeMapping("atril", "pdf")
+	s.AddApplicationFiletypeMapping("sh", "/usr/bin/bash")
+	s.AddApplicationFiletypeMapping("pdf", "atril")
 
-	s.RemoveApplicationFiletypeMapping("/usr/bin/bash")
+	s.RemoveApplicationFiletypeMapping("sh")
+
+	fmt.Printf("%+v\n", s.GetApplicationFiletypeMapping())
 
 	if !reflect.DeepEqual(s.GetApplicationFiletypeMapping(), targetMap) {
 		t.Fatalf(
@@ -69,8 +87,8 @@ func TestSettingsWriteApplicationFiletypeMapping(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s.AddApplicationFiletypeMapping("/usr/bin/bash", "sh")
-	s.AddApplicationFiletypeMapping("atril", "pdf")
+	s.AddApplicationFiletypeMapping("sh", "/usr/bin/bash")
+	s.AddApplicationFiletypeMapping("pdf", "atril")
 
 	err = s.WriteApplicationFiletypeMapping()
 	if err != nil {
@@ -87,7 +105,7 @@ func TestSettingsWriteApplicationFiletypeMapping(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expectedContent := "/usr/bin/bash,sh\natril,pdf\n"
+	expectedContent := "sh,/usr/bin/bash\npdf,atril\n"
 	if string(fileContent) != expectedContent {
 		t.Fatalf("fileContent == %q, expected %q", string(fileContent), expectedContent)
 	}
@@ -97,8 +115,8 @@ func TestSettingsWriteApplicationFiletypeMapping(t *testing.T) {
 func TestSettingsReadApplicationFiletypeMapping(t *testing.T) {
 
 	targetMap := logic.ApplicationFiletypeMapping{
-		"/usr/bin/bash": "sh",
-		"atril":         "pdf",
+		"sh":  "/usr/bin/bash",
+		"pdf": "atril",
 	}
 
 	s, err := logic.SettingsNew()
@@ -110,6 +128,8 @@ func TestSettingsReadApplicationFiletypeMapping(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	fmt.Printf("%+v\n", s.GetApplicationFiletypeMapping())
 
 	if !reflect.DeepEqual(s.GetApplicationFiletypeMapping(), targetMap) {
 		t.Fatalf(

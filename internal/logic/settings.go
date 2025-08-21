@@ -65,12 +65,12 @@ func SettingsDefaultNew() (*Settings, error) {
 	return s, err
 }
 
-func (s *Settings) AddApplicationFiletypeMapping(applicationPath string, fileType string) {
-	s.applicationFiletypeMapping[applicationPath] = fileType
+func (s *Settings) AddApplicationFiletypeMapping(fileType string, applicationPath string) {
+	s.applicationFiletypeMapping[fileType] = applicationPath
 }
 
-func (s *Settings) RemoveApplicationFiletypeMapping(applicationPathKey string) {
-	delete(s.applicationFiletypeMapping, applicationPathKey)
+func (s *Settings) RemoveApplicationFiletypeMapping(fileType string) {
+	delete(s.applicationFiletypeMapping, fileType)
 }
 
 func (s *Settings) GetApplicationFiletypeMapping() ApplicationFiletypeMapping {
@@ -92,8 +92,8 @@ func (s *Settings) WriteApplicationFiletypeMapping() error {
 	writer := bufio.NewWriter(f)
 	defer writer.Flush()
 
-	for applicationPath, extension := range s.applicationFiletypeMapping {
-		_, err := writer.WriteString(strings.Join([]string{applicationPath, extension}, ",") + "\n")
+	for extension, applicationPath := range s.applicationFiletypeMapping {
+		_, err := writer.WriteString(strings.Join([]string{extension, applicationPath}, ",") + "\n")
 
 		if err != nil {
 			return err
