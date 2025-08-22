@@ -4,14 +4,22 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/exec"
+	"path"
 	"path/filepath"
+	"strings"
 
 	"gitlab.wige.one/wigeon/sage/internal/models"
+)
+
+var (
+	NoMappingError = errors.New("No application mapping for given filetype")
 )
 
 type FileBrowser struct {
 	currentDirectory string
 	historyStack     *models.HistoryStack
+	settings         *Settings
 }
 
 func FileBrowserNew() *FileBrowser {
@@ -20,6 +28,13 @@ func FileBrowserNew() *FileBrowser {
 	fb.historyStack = models.HistoryStackNew()
 
 	return &fb
+}
+
+func FileBrowserNewWithSettings(settings *Settings) *FileBrowser {
+	fb := FileBrowserNew()
+	fb.settings = settings
+
+	return fb
 }
 
 func (fb *FileBrowser) ChangeDirectory(path string) error {
@@ -88,4 +103,43 @@ func (fb *FileBrowser) GetCurrentDirContents() ([]os.FileInfo, error) {
 	}
 
 	return dirContents, nil
+}
+
+func (fb *FileBrowser) OpenFileExternallyWithMapping(filePath string) error {
+
+	application := fb.settings.LookupApplication(path.Ext(filePath))
+
+	if application == "" {
+		return NoMappingError
+	}
+
+	err := fb.OpenFileExternally(application, filePath, false)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (fb *FileBrowser) OpenFileExternally(executablePath string, filePath string, save bool) error {
+
+	executablePathSplit := strings.Split(executablePath, " ")
+	executable := executablePathSplit[0]
+	args := append(executablePathSplit[1:], filePath)
+
+	command := exec.Command(executable, args...)
+	err := command.Start()
+
+	if err != nil {
+		return err
+	}
+
+	if save {
+		fb.settings.AddApplicationFiletypeMapping(
+			path.Ext(filePath),
+			executablePath,
+		)
+	}
+
+	return nil
 }

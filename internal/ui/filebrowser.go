@@ -1,12 +1,15 @@
 package ui
 
 import (
+	"errors"
 	"fmt"
 	"log"
+	"os"
 	"path/filepath"
 	"time"
 
 	"gitlab.wige.one/wigeon/sage/internal/logic"
+	"gitlab.wige.one/wigeon/sage/internal/ui/dialogs"
 
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
@@ -32,6 +35,7 @@ var DEFAULT_COLUMNS = []Column{
 	{Index: COLUMN_EXTENSION, Name: "Type", Type: glib.TYPE_STRING},
 }
 
+// TODO: implement error dialogs
 type FileBrowserUI struct {
 	fileBrowser *logic.FileBrowser
 
@@ -39,12 +43,16 @@ type FileBrowserUI struct {
 	fileTreeView  *gtk.TreeView
 	Layout        *gtk.Box
 	pathEntry     *gtk.Entry
+	parent        gtk.IWindow
+
+	mostRecentSelection string
 }
 
-func FileBrowserUINew() (*FileBrowserUI, error) {
+func FileBrowserUINew(parent gtk.IWindow, settings *logic.Settings) (*FileBrowserUI, error) {
 	var fbui FileBrowserUI
 
-	fbui.fileBrowser = logic.FileBrowserNew()
+	fbui.fileBrowser = logic.FileBrowserNewWithSettings(settings)
+	fbui.parent = parent
 
 	treeView, listStore, err := setupFileTreeView()
 	if err != nil {
@@ -197,6 +205,7 @@ func (fbui *FileBrowserUI) updateFileTreeView() error {
 	return nil
 }
 
+// FIX: returning error here does nothing as this method is used to respond to a signal
 func (fbui *FileBrowserUI) treeViewRowActivatedConnection(tv *gtk.TreeView, tp *gtk.TreePath, tvc *gtk.TreeViewColumn) error {
 
 	iter, err := fbui.fileListStore.GetIter(tp)
@@ -214,8 +223,41 @@ func (fbui *FileBrowserUI) treeViewRowActivatedConnection(tv *gtk.TreeView, tp *
 		return err
 	}
 
+	fullPath := filepath.Join(fbui.fileBrowser.CurrentDirectory(), path)
+	fbui.mostRecentSelection = fullPath
+
+	fileInfo, err := os.Stat(fullPath)
+	if err != nil {
+		return err
+	}
+
+	if fileInfo.Mode().IsRegular() {
+
+		err := fbui.fileBrowser.OpenFileExternallyWithMapping(fullPath)
+
+		// File was opened successfully with existing mapping.
+		// Return without opening a dialog.
+		if err == nil {
+			return nil
+		}
+
+		if !errors.Is(err, logic.NoMappingError) {
+			return err
+		}
+
+		openFileDialog, err := dialogs.OpenFileDialogNew(fbui.parent, fbui.openFileDialogCallback)
+		if err != nil {
+			return err
+		}
+
+		openFileDialog.ShowAll()
+
+		return nil
+
+	}
+
 	err = fbui.fileBrowser.ChangeDirectory(
-		filepath.Join(fbui.fileBrowser.CurrentDirectory(), path),
+		fullPath,
 	)
 	if err != nil {
 		return err
@@ -271,5 +313,14 @@ func (fbui *FileBrowserUI) pathEntryActivatedConnection(entry *gtk.Entry) {
 	err = fbui.updateFileTreeView()
 	if err != nil {
 		log.Fatal("Unable to update file treeview: ", err)
+	}
+}
+
+func (fbui *FileBrowserUI) openFileDialogCallback(ofdr *dialogs.OpenFileDialogResponse) {
+
+	err := fbui.fileBrowser.OpenFileExternally(ofdr.ExecutablePath, fbui.mostRecentSelection, ofdr.SaveSelection)
+	if err != nil {
+		log.Println(err)
+		return
 	}
 }
