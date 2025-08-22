@@ -105,10 +105,6 @@ func (fb *FileBrowser) GetCurrentDirContents() ([]os.FileInfo, error) {
 	return dirContents, nil
 }
 
-func SaveApplicationMapping(executablePath string, extension string) {
-	// TODO: Save application-filetype mapping to users home directory
-}
-
 func (fb *FileBrowser) OpenFileExternallyWithMapping(filePath string) error {
 
 	application := fb.settings.LookupApplication(path.Ext(filePath))
