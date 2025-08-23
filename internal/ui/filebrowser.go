@@ -62,6 +62,7 @@ func FileBrowserUINew(parent gtk.IWindow, settings *logic.Settings) (*FileBrowse
 		return nil, err
 	}
 	treeView.Connect("row-activated", fbui.treeViewRowActivatedConnection)
+	treeView.SetVExpand(true)
 	treeView.SetModel(listStore)
 	fbui.fileTreeView = treeView
 	fbui.fileListStore = listStore
