@@ -34,6 +34,7 @@ func main() {
 		ui.SageApplicationStart(appWindow)
 
 		appWindow.SetTitle(fmt.Sprintf("%s - %s", APP_NAME, APP_VERSION))
+		appWindow.SetDefaultSize(800, 600)
 		appWindow.SetSizeRequest(800, 600)
 		appWindow.Show()
 
