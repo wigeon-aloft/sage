@@ -43,6 +43,7 @@ type FileBrowserUI struct {
 	fileTreeView  *gtk.TreeView
 	Layout        *gtk.Box
 	pathEntry     *gtk.Entry
+	filterEntry   *gtk.Entry
 	parent        gtk.IWindow
 
 	mostRecentSelection string
@@ -73,16 +74,15 @@ func FileBrowserUINew(parent gtk.IWindow, settings *logic.Settings) (*FileBrowse
 		return nil, err
 	}
 	scrollableWindow.SetPropagateNaturalHeight(true)
-
-	entry, err := gtk.EntryNew()
-	if err != nil {
-		log.Fatal("Could not create entry widget:", err)
-	}
-	entry.Connect("activate", fbui.pathEntryActivatedConnection)
-	entry.SetText(fbui.fileBrowser.CurrentDirectory())
-	fbui.pathEntry = entry
-
 	scrollableWindow.Add(treeView)
+
+	pathEntry, err := gtk.EntryNew()
+	if err != nil {
+		log.Fatal("Could not create path entry widget:", err)
+	}
+	pathEntry.Connect("activate", fbui.pathEntryActivatedConnection)
+	pathEntry.SetText(fbui.fileBrowser.CurrentDirectory())
+	fbui.pathEntry = pathEntry
 
 	upButton, err := gtk.ButtonNew()
 	if err != nil {
@@ -98,13 +98,22 @@ func FileBrowserUINew(parent gtk.IWindow, settings *logic.Settings) (*FileBrowse
 	backButton.SetLabel("←")
 	backButton.Connect("clicked", fbui.backButtonClickedConnection)
 
-	buttonBox, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 8)
+	filterEntry, err := gtk.EntryNew()
+	if err != nil {
+		log.Fatal("Could not create filter entry widget:", err)
+	}
+	filterEntry.SetPlaceholderText("Filter...")
+	filterEntry.SetHExpand(true)
+	fbui.filterEntry = filterEntry
 
-	buttonBox.Add(backButton)
-	buttonBox.Add(upButton)
+	toolbarBox, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 8)
 
-	layout.Add(entry)
-	layout.Add(buttonBox)
+	toolbarBox.Add(backButton)
+	toolbarBox.Add(upButton)
+	toolbarBox.Add(filterEntry)
+
+	layout.Add(pathEntry)
+	layout.Add(toolbarBox)
 	layout.Add(scrollableWindow)
 
 	fbui.Layout = layout
