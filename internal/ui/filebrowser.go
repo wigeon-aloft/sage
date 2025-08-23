@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"gitlab.wige.one/wigeon/sage/internal/logic"
@@ -47,6 +48,7 @@ type FileBrowserUI struct {
 	parent        gtk.IWindow
 
 	mostRecentSelection string
+	filter              string
 }
 
 func FileBrowserUINew(parent gtk.IWindow, settings *logic.Settings) (*FileBrowserUI, error) {
@@ -104,6 +106,7 @@ func FileBrowserUINew(parent gtk.IWindow, settings *logic.Settings) (*FileBrowse
 	}
 	filterEntry.SetPlaceholderText("Filter...")
 	filterEntry.SetHExpand(true)
+	filterEntry.Connect("changed", fbui.filterEntryChangedConnection)
 	fbui.filterEntry = filterEntry
 
 	toolbarBox, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 8)
@@ -201,6 +204,10 @@ func (fbui *FileBrowserUI) updateFileTreeView() error {
 		ext = filepath.Ext(item.Name())
 		if ext == "" {
 			ext = "dir"
+		}
+
+		if !strings.Contains(item.Name(), fbui.filter) {
+			continue
 		}
 
 		fbui.addRow(
@@ -308,8 +315,8 @@ func (fbui *FileBrowserUI) upButtonClickedConnection(_ *gtk.Button) {
 
 }
 
-func (fbui *FileBrowserUI) pathEntryActivatedConnection(entry *gtk.Entry) {
-	query, err := entry.GetText()
+func (fbui *FileBrowserUI) pathEntryActivatedConnection(pathEntry *gtk.Entry) {
+	query, err := pathEntry.GetText()
 	if err != nil {
 		log.Fatal("Unable to get text from Entry widget: ", err)
 	}
@@ -323,6 +330,17 @@ func (fbui *FileBrowserUI) pathEntryActivatedConnection(entry *gtk.Entry) {
 	if err != nil {
 		log.Fatal("Unable to update file treeview: ", err)
 	}
+}
+
+func (fbui *FileBrowserUI) filterEntryChangedConnection(filterEntry *gtk.Entry) {
+	filterText, err := filterEntry.GetText()
+	if err != nil {
+		log.Fatal("Unable to get text from filter entry:", err)
+	}
+
+	fbui.filter = filterText
+
+	fbui.updateFileTreeView()
 }
 
 func (fbui *FileBrowserUI) openFileDialogCallback(ofdr *dialogs.OpenFileDialogResponse) {
