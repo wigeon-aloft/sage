@@ -9,24 +9,38 @@ import (
 
 	"github.com/gotk3/gotk3/gtk"
 	"gitlab.wige.one/wigeon/sage/internal/logic"
+	"gitlab.wige.one/wigeon/sage/internal/ui/dialogs"
 )
 
 func SageApplicationStart(appWindow *gtk.ApplicationWindow) {
 
 	settings, err := logic.SettingsNew()
 	if err != nil {
-		log.Fatal("Could not create settings: ", err)
+		errDialog, err := dialogs.FatalErrorDialogNew(appWindow, err)
+		if err != nil {
+			log.Fatal(err)
+		}
+		errDialog.ShowAll()
 	}
 	err = settings.ReadApplicationFiletypeMapping()
 	if err != nil {
-		log.Fatal("Could not read application-filetype mapping from disk: ", err)
+		errDialog, err := dialogs.ErrorDialogNew(appWindow, err)
+		if err != nil {
+			log.Fatal(err)
+		}
+		errDialog.ShowAll()
+
 	}
 
 	StartShutdownListener(settings)
 
 	fbui, err := FileBrowserUINew(appWindow, settings)
 	if err != nil {
-		log.Fatal("Could not create FileBrowserUINew: ", err)
+		errDialog, err := dialogs.FatalErrorDialogNew(appWindow, err)
+		if err != nil {
+			log.Fatal(err)
+		}
+		errDialog.ShowAll()
 	}
 
 	appWindow.Add(fbui.Layout)
@@ -52,5 +66,6 @@ func Exit(exitCode int, settings *logic.Settings) {
 	if err != nil {
 		fmt.Println("Unable to write application-filetype map to file:", err)
 	}
+	// FIX: return exitCode, not 0
 	os.Exit(0)
 }
