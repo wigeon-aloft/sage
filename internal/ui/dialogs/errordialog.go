@@ -37,8 +37,8 @@ func errorDialogNew(title string, parent gtk.IWindow, errorMessage string) (*gtk
 
 }
 
-func ErrorDialogNew(title string, parent gtk.IWindow, errorMessage string) (*gtk.Dialog, error) {
-	dialog, err := errorDialogNew(title, parent, errorMessage)
+func ErrorDialogNew(parent gtk.IWindow, err error) (*gtk.Dialog, error) {
+	dialog, err := errorDialogNew("Error", parent, err.Error())
 
 	if err != nil {
 		return nil, err
@@ -51,9 +51,10 @@ func ErrorDialogNew(title string, parent gtk.IWindow, errorMessage string) (*gtk
 	return dialog, nil
 }
 
-func FatalErrorDialogNew(title string, parent gtk.IWindow, errorMessage string) (*gtk.Dialog, error) {
+// TODO: any err in this function should trigger an immediate call to application.Exit(), no error should be returned
+func FatalErrorDialogNew(parent gtk.IWindow, err error) (*gtk.Dialog, error) {
 
-	dialog, err := errorDialogNew(title, parent, errorMessage)
+	dialog, err := errorDialogNew("Fatal Error", parent, err.Error())
 
 	if err != nil {
 		return nil, err

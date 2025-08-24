@@ -59,7 +59,11 @@ func FileBrowserUINew(parent gtk.IWindow, settings *logic.Settings) (*FileBrowse
 
 	treeView, listStore, err := setupFileTreeView()
 	if err != nil {
-		return nil, err
+		errDialog, err := dialogs.FatalErrorDialogNew(fbui.parent, err)
+		if err != nil {
+			log.Fatal(err)
+		}
+		errDialog.ShowAll()
 	}
 	treeView.Connect("row-activated", fbui.treeViewRowActivatedConnection)
 	treeView.SetVExpand(true)
@@ -69,19 +73,31 @@ func FileBrowserUINew(parent gtk.IWindow, settings *logic.Settings) (*FileBrowse
 
 	layout, err := gtk.BoxNew(gtk.ORIENTATION_VERTICAL, 8)
 	if err != nil {
-		return nil, err
+		errDialog, err := dialogs.FatalErrorDialogNew(fbui.parent, err)
+		if err != nil {
+			log.Fatal(err)
+		}
+		errDialog.ShowAll()
 	}
 
 	scrollableWindow, err := gtk.ScrolledWindowNew(nil, nil)
 	if err != nil {
-		return nil, err
+		errDialog, err := dialogs.FatalErrorDialogNew(fbui.parent, err)
+		if err != nil {
+			log.Fatal(err)
+		}
+		errDialog.ShowAll()
 	}
 	scrollableWindow.SetPropagateNaturalHeight(true)
 	scrollableWindow.Add(treeView)
 
 	pathEntry, err := gtk.EntryNew()
 	if err != nil {
-		log.Fatal("Could not create path entry widget:", err)
+		errDialog, err := dialogs.FatalErrorDialogNew(fbui.parent, err)
+		if err != nil {
+			log.Fatal(err)
+		}
+		errDialog.ShowAll()
 	}
 	pathEntry.Connect("activate", fbui.pathEntryActivatedConnection)
 	pathEntry.SetText(fbui.fileBrowser.CurrentDirectory())
@@ -89,21 +105,33 @@ func FileBrowserUINew(parent gtk.IWindow, settings *logic.Settings) (*FileBrowse
 
 	upButton, err := gtk.ButtonNew()
 	if err != nil {
-		log.Fatal()
+		errDialog, err := dialogs.FatalErrorDialogNew(fbui.parent, err)
+		if err != nil {
+			log.Fatal(err)
+		}
+		errDialog.ShowAll()
 	}
 	upButton.SetLabel("↑")
 	upButton.Connect("clicked", fbui.upButtonClickedConnection)
 
 	backButton, err := gtk.ButtonNew()
 	if err != nil {
-		log.Fatal()
+		errDialog, err := dialogs.FatalErrorDialogNew(fbui.parent, err)
+		if err != nil {
+			log.Fatal(err)
+		}
+		errDialog.ShowAll()
 	}
 	backButton.SetLabel("←")
 	backButton.Connect("clicked", fbui.backButtonClickedConnection)
 
 	filterEntry, err := gtk.EntryNew()
 	if err != nil {
-		log.Fatal("Could not create filter entry widget:", err)
+		errDialog, err := dialogs.FatalErrorDialogNew(fbui.parent, err)
+		if err != nil {
+			log.Fatal(err)
+		}
+		errDialog.ShowAll()
 	}
 	filterEntry.SetPlaceholderText("Filter...")
 	filterEntry.SetHExpand(true)
@@ -111,6 +139,13 @@ func FileBrowserUINew(parent gtk.IWindow, settings *logic.Settings) (*FileBrowse
 	fbui.filterEntry = filterEntry
 
 	toolbarBox, err := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 8)
+	if err != nil {
+		errDialog, err := dialogs.FatalErrorDialogNew(fbui.parent, err)
+		if err != nil {
+			log.Fatal(err)
+		}
+		errDialog.ShowAll()
+	}
 
 	toolbarBox.Add(backButton)
 	toolbarBox.Add(upButton)
@@ -227,17 +262,29 @@ func (fbui *FileBrowserUI) treeViewRowActivatedConnection(tv *gtk.TreeView, tp *
 
 	iter, err := fbui.fileListStore.GetIter(tp)
 	if err != nil {
-		return err
+		errDialog, err := dialogs.ErrorDialogNew(fbui.parent, err)
+		if err != nil {
+			log.Fatal(err)
+		}
+		errDialog.ShowAll()
 	}
 
 	columnValue, err := fbui.fileListStore.GetValue(iter, COLUMN_FILENAME)
 	if err != nil {
-		return err
+		errDialog, err := dialogs.ErrorDialogNew(fbui.parent, err)
+		if err != nil {
+			log.Fatal(err)
+		}
+		errDialog.ShowAll()
 	}
 
 	path, err := columnValue.GetString()
 	if err != nil {
-		return err
+		errDialog, err := dialogs.ErrorDialogNew(fbui.parent, err)
+		if err != nil {
+			log.Fatal(err)
+		}
+		errDialog.ShowAll()
 	}
 
 	fullPath := filepath.Join(fbui.fileBrowser.CurrentDirectory(), path)
@@ -245,7 +292,11 @@ func (fbui *FileBrowserUI) treeViewRowActivatedConnection(tv *gtk.TreeView, tp *
 
 	fileInfo, err := os.Stat(fullPath)
 	if err != nil {
-		return err
+		errDialog, err := dialogs.ErrorDialogNew(fbui.parent, err)
+		if err != nil {
+			log.Fatal(err)
+		}
+		errDialog.ShowAll()
 	}
 
 	if fileInfo.Mode().IsRegular() {
@@ -259,12 +310,20 @@ func (fbui *FileBrowserUI) treeViewRowActivatedConnection(tv *gtk.TreeView, tp *
 		}
 
 		if !errors.Is(err, logic.NoMappingError) {
-			return err
+			errDialog, err := dialogs.ErrorDialogNew(fbui.parent, err)
+			if err != nil {
+				log.Fatal(err)
+			}
+			errDialog.ShowAll()
 		}
 
 		openFileDialog, err := dialogs.OpenFileDialogNew(fbui.parent, fbui.openFileDialogCallback)
 		if err != nil {
-			return err
+			errDialog, err := dialogs.ErrorDialogNew(fbui.parent, err)
+			if err != nil {
+				log.Fatal(err)
+			}
+			errDialog.ShowAll()
 		}
 
 		openFileDialog.ShowAll()
@@ -298,7 +357,11 @@ func (fbui *FileBrowserUI) backButtonClickedConnection(_ *gtk.Button) {
 	err := fbui.updateFileTreeView()
 
 	if err != nil {
-		log.Fatal("Unable to update file treeview: ", err)
+		errDialog, err := dialogs.ErrorDialogNew(fbui.parent, err)
+		if err != nil {
+			log.Fatal(err)
+		}
+		errDialog.ShowAll()
 	}
 
 }
@@ -311,7 +374,11 @@ func (fbui *FileBrowserUI) upButtonClickedConnection(_ *gtk.Button) {
 	err := fbui.updateFileTreeView()
 
 	if err != nil {
-		log.Fatal("Unable to update file treeview: ", err)
+		errDialog, err := dialogs.ErrorDialogNew(fbui.parent, err)
+		if err != nil {
+			log.Fatal(err)
+		}
+		errDialog.ShowAll()
 	}
 
 }
@@ -319,24 +386,40 @@ func (fbui *FileBrowserUI) upButtonClickedConnection(_ *gtk.Button) {
 func (fbui *FileBrowserUI) pathEntryActivatedConnection(pathEntry *gtk.Entry) {
 	query, err := pathEntry.GetText()
 	if err != nil {
-		log.Fatal("Unable to get text from Entry widget: ", err)
+		errDialog, err := dialogs.ErrorDialogNew(fbui.parent, err)
+		if err != nil {
+			log.Fatal(err)
+		}
+		errDialog.ShowAll()
 	}
 
 	err = fbui.fileBrowser.ChangeDirectory(query)
 	if err != nil {
-		log.Fatal("Unable to change directory: ", err)
+		errDialog, err := dialogs.ErrorDialogNew(fbui.parent, err)
+		if err != nil {
+			log.Fatal(err)
+		}
+		errDialog.ShowAll()
 	}
 
 	err = fbui.updateFileTreeView()
 	if err != nil {
-		log.Fatal("Unable to update file treeview: ", err)
+		errDialog, err := dialogs.ErrorDialogNew(fbui.parent, err)
+		if err != nil {
+			log.Fatal(err)
+		}
+		errDialog.ShowAll()
 	}
 }
 
 func (fbui *FileBrowserUI) filterEntryChangedConnection(filterEntry *gtk.Entry) {
 	filterText, err := filterEntry.GetText()
 	if err != nil {
-		log.Fatal("Unable to get text from filter entry:", err)
+		errDialog, err := dialogs.ErrorDialogNew(fbui.parent, err)
+		if err != nil {
+			log.Fatal(err)
+		}
+		errDialog.ShowAll()
 	}
 
 	fbui.filter = filterText
@@ -348,7 +431,11 @@ func (fbui *FileBrowserUI) openFileDialogCallback(ofdr *dialogs.OpenFileDialogRe
 
 	err := fbui.fileBrowser.OpenFileExternally(ofdr.ExecutablePath, fbui.mostRecentSelection, ofdr.SaveSelection)
 	if err != nil {
-		log.Println(err)
+		errDialog, err := dialogs.ErrorDialogNew(fbui.parent, err)
+		if err != nil {
+			log.Fatal(err)
+		}
+		errDialog.ShowAll()
 		return
 	}
 }
