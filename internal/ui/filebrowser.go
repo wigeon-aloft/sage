@@ -42,7 +42,7 @@ type FileBrowserUI struct {
 
 	fileListStore *gtk.ListStore
 	fileTreeView  *gtk.TreeView
-	Layout        *gtk.Box
+	Layout        *gtk.Box // TODO: Layout should be an embedded field
 	pathEntry     *gtk.Entry
 	filterEntry   *gtk.Entry
 	parent        gtk.IWindow

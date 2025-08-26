@@ -7,48 +7,85 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 	"gitlab.wige.one/wigeon/sage/internal/logic"
-	"gitlab.wige.one/wigeon/sage/internal/ui/dialogs"
 )
 
-func SageApplicationStart(appWindow *gtk.ApplicationWindow) {
+type Application struct {
+	id      string
+	name    string
+	version string
+
+	*gtk.Application
+	*gtk.ApplicationWindow
+
+	settings *logic.Settings
+
+	fileBrowserUI *FileBrowserUI
+}
+
+func ApplicationNew(id, name, version string) (*Application, error) {
+
+	var applicationWindow *gtk.ApplicationWindow
+
+	application := Application{}
+
+	application.id = id
+	application.name = name
+	application.version = version
+
+	gtkApplication, err := gtk.ApplicationNew(
+		id,
+		glib.APPLICATION_FLAGS_NONE,
+	)
+	if err != nil {
+		log.Fatal("Unable to create GTK application:", err)
+	}
+	application.Application = gtkApplication
 
 	settings, err := logic.SettingsNew()
 	if err != nil {
-		errDialog, err := dialogs.FatalErrorDialogNew(appWindow, err)
-		if err != nil {
-			log.Fatal(err)
-		}
-		errDialog.ShowAll()
+		log.Fatal(err)
 	}
 	err = settings.ReadApplicationFiletypeMapping()
 	if err != nil {
-		errDialog, err := dialogs.ErrorDialogNew(appWindow, err)
+		log.Fatal(err)
+	}
+	application.settings = settings
+
+	application.Connect("activate", func() {
+
+		applicationWindow, err = gtk.ApplicationWindowNew(gtkApplication)
+		if err != nil {
+			log.Fatal("Unable to create GTK application window:", err)
+		}
+		applicationWindow.SetTitle(fmt.Sprintf("%s - %s", name, version))
+		applicationWindow.SetDefaultSize(800, 600)
+		applicationWindow.SetSizeRequest(800, 600)
+		applicationWindow.Connect("destroy", application.GTKDestroyHandler)
+
+		fileBrowserUI, err := FileBrowserUINew(
+			applicationWindow,
+			settings,
+		)
 		if err != nil {
 			log.Fatal(err)
 		}
-		errDialog.ShowAll()
+		application.fileBrowserUI = fileBrowserUI
 
-	}
+		applicationWindow.Add(application.fileBrowserUI.Layout)
+		application.ApplicationWindow = applicationWindow
 
-	StartShutdownListener(settings)
+		application.Show()
+		application.fileBrowserUI.Layout.ShowAll()
+	})
 
-	fbui, err := FileBrowserUINew(appWindow, settings)
-	if err != nil {
-		errDialog, err := dialogs.FatalErrorDialogNew(appWindow, err)
-		if err != nil {
-			log.Fatal(err)
-		}
-		errDialog.ShowAll()
-	}
+	return &application, nil
 
-	appWindow.Add(fbui.Layout)
-
-	appWindow.ShowAll()
 }
 
-func StartShutdownListener(settings *logic.Settings) {
+func (a *Application) shutdownSignalListenerStart() error {
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
@@ -56,16 +93,38 @@ func StartShutdownListener(settings *logic.Settings) {
 	go func() {
 		oscall := <-c
 		fmt.Println("Received signal", oscall)
-		Exit(0, settings)
+		a.Exit(0)
 	}()
 
+	return nil
 }
 
-func Exit(exitCode int, settings *logic.Settings) {
-	err := settings.WriteApplicationFiletypeMapping()
+func (a *Application) Start() (int, error) {
+
+	err := a.shutdownSignalListenerStart()
 	if err != nil {
-		fmt.Println("Unable to write application-filetype map to file:", err)
+		// TODO: define error codes, below '1' is just a placeholder
+		return 1, err
 	}
-	// FIX: return exitCode, not 0
-	os.Exit(0)
+
+	// We call a.Run() last, as it blocks until GTK exits
+	exitCode := a.Run(os.Args)
+
+	return exitCode, nil
+}
+
+func (a *Application) GTKDestroyHandler(applicationWindow *gtk.ApplicationWindow) {
+	// TODO: pass a more relevant exit code once exit codes are implemented
+	a.Exit(0)
+}
+
+func (a *Application) Exit(exitCode int) {
+
+	err := a.settings.WriteApplicationFiletypeMapping()
+	if err != nil {
+		log.Println(err)
+	}
+
+	gtk.MainQuit()
+	os.Exit(exitCode)
 }
