@@ -1,12 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"os"
 
-	"github.com/gotk3/gotk3/glib"
-	"github.com/gotk3/gotk3/gtk"
 	"gitlab.wige.one/wigeon/sage/internal/ui"
 )
 
@@ -18,31 +14,27 @@ const DEFAULT_LAYOUT_PATH = "internal/ui/layout/sage.xml"
 
 func main() {
 
-	application, err := gtk.ApplicationNew(APP_ID, glib.APPLICATION_FLAGS_NONE)
+	// application, err := gtk.ApplicationNew(APP_ID, glib.APPLICATION_FLAGS_NONE)
+	//
+	// if err != nil {
+	// 	log.Fatal("Could not create application:", err)
+	// }
+	//
+	// application.Connect("activate", func() {
+	//
+	// 	appWindow.Connect("destroy", func() {
+	// 		gtk.MainQuit()
+	// 	})
+	//
+	// })
+	//
 
+	application, err := ui.ApplicationNew(APP_ID, APP_NAME, APP_VERSION)
 	if err != nil {
-		log.Fatal("Could not create application:", err)
+		log.Fatal(err)
 	}
 
-	application.Connect("activate", func() {
+	exitCode, err := application.Start()
+	application.Exit(exitCode)
 
-		appWindow, err := gtk.ApplicationWindowNew(application)
-		if err != nil {
-			log.Fatal("Could not create application window: ", err)
-		}
-
-		ui.SageApplicationStart(appWindow)
-
-		appWindow.SetTitle(fmt.Sprintf("%s - %s", APP_NAME, APP_VERSION))
-		appWindow.SetDefaultSize(800, 600)
-		appWindow.SetSizeRequest(800, 600)
-		appWindow.Show()
-
-		appWindow.Connect("destroy", func() {
-			gtk.MainQuit()
-		})
-
-	})
-
-	application.Run(os.Args)
 }
