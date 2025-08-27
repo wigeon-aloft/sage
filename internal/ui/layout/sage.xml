@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk+" version="3.20"/>
+  
+  <!-- Define a main application window -->
+  <object class="GtkWindow" id="main_window">
+    <property name="title">Sage</property>
+    <property name="default-width">600</property>
+    <property name="default-height">400</property>
+
+    <child>
+      <object class="GtkButton" id="btn_hello">
+        <property name="label">Click Me</property>
+      </object>
+    </child>
+  </object>
+</interface>
