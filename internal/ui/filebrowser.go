@@ -12,6 +12,7 @@ import (
 	"gitlab.wige.one/wigeon/sage/internal/logic"
 	"gitlab.wige.one/wigeon/sage/internal/ui/dialogs"
 
+	"github.com/gotk3/gotk3/gdk"
 	"github.com/gotk3/gotk3/glib"
 	"github.com/gotk3/gotk3/gtk"
 )
@@ -220,6 +221,23 @@ func setupFileTreeView() (*gtk.TreeView, *gtk.ListStore, error) {
 	}
 	treeView.SetModel(listStore)
 
+	treeView.Connect("button-release-event", func(treeView *gtk.TreeView, event *gdk.Event) {
+
+		eventButton := gdk.EventButtonNewFromEvent(event)
+
+		switch eventButton.Button() {
+		case gdk.BUTTON_SECONDARY:
+			menu, err := RightClickContextMenuNew()
+			if err != nil {
+				return
+			}
+
+			menu.Popup("")
+		default:
+			return
+		}
+	})
+
 	return treeView, listStore, nil
 }
 
@@ -258,6 +276,7 @@ func (fbui *FileBrowserUI) updateFileTreeView() error {
 }
 
 // FIX: returning error here does nothing as this method is used to respond to a signal
+// FIX: break this method down, it's too long
 func (fbui *FileBrowserUI) treeViewRowActivatedConnection(tv *gtk.TreeView, tp *gtk.TreePath, tvc *gtk.TreeViewColumn) error {
 
 	iter, err := fbui.fileListStore.GetIter(tp)
